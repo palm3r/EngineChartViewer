@@ -85,30 +85,6 @@ namespace EngineChartViewer.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("KW")]
-        public global::EngineChartViewer.PowerUnits PowerUnit {
-            get {
-                return ((global::EngineChartViewer.PowerUnits)(this["PowerUnit"]));
-            }
-            set {
-                this["PowerUnit"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("NM")]
-        public global::EngineChartViewer.TorqueUnits TorqueUnit {
-            get {
-                return ((global::EngineChartViewer.TorqueUnits)(this["TorqueUnit"]));
-            }
-            set {
-                this["TorqueUnit"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string LastSaveLocation {
             get {

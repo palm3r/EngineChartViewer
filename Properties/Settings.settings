@@ -17,12 +17,6 @@
     <Setting Name="BackTorqueSeriesVisibility" Type="System.Windows.Visibility" Scope="User">
       <Value Profile="(Default)">Visible</Value>
     </Setting>
-    <Setting Name="PowerUnit" Type="EngineChartViewer.PowerUnits" Scope="User">
-      <Value Profile="(Default)">KW</Value>
-    </Setting>
-    <Setting Name="TorqueUnit" Type="EngineChartViewer.TorqueUnits" Scope="User">
-      <Value Profile="(Default)">NM</Value>
-    </Setting>
     <Setting Name="LastSaveLocation" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>

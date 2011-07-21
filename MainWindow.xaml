@@ -6,6 +6,8 @@
         xmlns:p="clr-namespace:EngineChartViewer.Properties"
         xmlns:s="clr-namespace:System;assembly=System"
         Title="Engine Chart Viewer v1.0"
+        Width="{Binding Source={x:Static p:Settings.Default}, Path=Width}"
+        Height="{Binding Source={x:Static p:Settings.Default}, Path=Height}"
         AllowDrop="True" Drop="Window_Drop">
   <Window.CommandBindings>
     <CommandBinding Command="{x:Static l:MainWindow.SaveAsImageCommand}"
@@ -14,6 +16,8 @@
   <Window.InputBindings>
     <KeyBinding Modifiers="Control" Key="S"
                 Command="{x:Static l:MainWindow.SaveAsImageCommand}" />
+    <MouseBinding MouseAction="MiddleClick"
+                  Command="{x:Static l:MainWindow.SaveAsImageCommand}" />
   </Window.InputBindings>
   <Window.Resources>
     <l:EnumBooleanConverter x:Key="EnumBooleanConverter" />
@@ -31,39 +35,20 @@
       </MenuItem>
       <MenuItem Header="_View">
         <MenuItem Header="Power" IsCheckable="True"
-                  IsChecked="{Binding Path=Visibility, ElementName=PowerSeries,
+                  IsChecked="{Binding Source={x:Static p:Settings.Default},
+                  Path=PowerSeriesVisibility, Mode=TwoWay,
                   Converter={StaticResource VisibilityBooleanConverter}}"
                   Click="Visibility_Click" />
         <MenuItem Header="Torque" IsCheckable="True"
-                  IsChecked="{Binding Path=Visibility, ElementName=TorqueSeries,
+                  IsChecked="{Binding Source={x:Static p:Settings.Default},
+                  Path=TorqueSeriesVisibility, Mode=TwoWay,
                   Converter={StaticResource VisibilityBooleanConverter}}"
                   Click="Visibility_Click" />
         <MenuItem Header="Back Torque" IsCheckable="True"
-                  IsChecked="{Binding Path=Visibility, ElementName=BackTorqueSeries,
+                  IsChecked="{Binding Source={x:Static p:Settings.Default},
+                  Path=BackTorqueSeriesVisibility, Mode=TwoWay,
                   Converter={StaticResource VisibilityBooleanConverter}}"
                   Click="Visibility_Click" />
-        <Separator />
-        <MenuItem Header="KW" IsCheckable="True"
-                  IsChecked="{Binding Path=PowerUnit, Converter={StaticResource EnumBooleanConverter},
-                  ConverterParameter=KW}"
-                  Click="ChangeUnit_Click" />
-        <MenuItem Header="PS" IsCheckable="True"
-                  IsChecked="{Binding Path=PowerUnit, Converter={StaticResource EnumBooleanConverter},
-                  ConverterParameter=PS}"
-                  Click="ChangeUnit_Click" />
-        <MenuItem Header="BHP" IsCheckable="True"
-                  IsChecked="{Binding Path=PowerUnit, Converter={StaticResource EnumBooleanConverter},
-                  ConverterParameter=BHP}"
-                  Click="ChangeUnit_Click" />
-        <Separator />
-        <MenuItem Header="Nm" IsCheckable="True"
-                  IsChecked="{Binding Path=TorqueUnit, Converter={StaticResource EnumBooleanConverter},
-                  ConverterParameter=NM}"
-                  Click="ChangeUnit_Click" />
-        <MenuItem Header="Kgm" IsCheckable="True"
-                  IsChecked="{Binding Path=TorqueUnit, Converter={StaticResource EnumBooleanConverter},
-                  ConverterParameter=KGM}"
-                  Click="ChangeUnit_Click" />
       </MenuItem>
     </Menu>
     <DockPanel x:Name="imageFrame" DockPanel.Dock="Top">
@@ -89,21 +74,27 @@
                         ShowMajorTicks="True" ShowMinorTicks="True" />
         </c:Chart.SecondaryYAxis>
         <c:Chart.Series>
-          <c:SplineSeries x:Name="TorqueSeries" LineStroke="#4040FF" LineStrokeThickness="2">
+          <c:SplineSeries x:Name="TorqueSeries" LineStroke="#4040FF" LineStrokeThickness="2"
+                          Visibility="{Binding Source={x:Static p:Settings.Default},
+                          Path=TorqueSeriesVisibility, Mode=TwoWay}">
             <c:SplineSeries.DataSeries>
               <c:BindableDataSeries Title="Torque" ItemsSource="{StaticResource DataSource}"
                                     YValueBinding="{Binding Path=Torque}"
                                     XValueBinding="{Binding Path=RPM}" />
             </c:SplineSeries.DataSeries>
           </c:SplineSeries>
-          <c:SplineSeries x:Name="BackTorqueSeries" LineStroke="#40FF40" LineStrokeThickness="2">
+          <c:SplineSeries x:Name="BackTorqueSeries" LineStroke="#40FF40" LineStrokeThickness="2"
+                          Visibility="{Binding Source={x:Static p:Settings.Default},
+                          Path=BackTorqueSeriesVisibility, Mode=TwoWay}">
             <c:SplineSeries.DataSeries>
               <c:BindableDataSeries Title="Back Torque" ItemsSource="{StaticResource DataSource}"
                                     YValueBinding="{Binding Path=BackTorque}"
                                     XValueBinding="{Binding Path=RPM}" />
             </c:SplineSeries.DataSeries>
           </c:SplineSeries>
-          <c:SplineSeries x:Name="PowerSeries" LineStroke="#FF4040" LineStrokeThickness="2">
+          <c:SplineSeries x:Name="PowerSeries" LineStroke="#FF4040" LineStrokeThickness="2"
+                          Visibility="{Binding Source={x:Static p:Settings.Default},
+                          Path=PowerSeriesVisibility, Mode=TwoWay}">
             <c:SplineSeries.DataSeries>
               <c:BindableDataSeries Title="Power" ItemsSource="{StaticResource DataSource}"
                                     YValueBinding="{Binding Path=Power}"
