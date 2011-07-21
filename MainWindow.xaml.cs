@@ -15,29 +15,15 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Microsoft.Win32;
 using Visiblox.Charts;
 
 namespace EngineChartViewer
 {
   public partial class MainWindow : Window, INotifyPropertyChanged
   {
-    public TorqueUnits TorqueUnit
-    {
-      get { return Data.TorqueUnit; }
-      set
-      {
-        Data.TorqueUnit = value;
-
-        foreach (Data d in DataSource)
-        {
-          d.OnPropertyChanged("Torque");
-          d.OnPropertyChanged("BackTorque");
-        }
-
-        chart.SecondaryYAxis.Title = string.Format("Torque ({0})", TorqueUnit.ToString());
-        OnPropertyChanged("TorqueUnit");
-      }
-    }
+    public static readonly ICommand SaveAsImageCommand = new RoutedUICommand("Save as Image",
+      "SaveAsImageCommand", typeof(MainWindow));
 
     public PowerUnits PowerUnit
     {
@@ -56,6 +42,24 @@ namespace EngineChartViewer
       }
     }
 
+    public TorqueUnits TorqueUnit
+    {
+      get { return Data.TorqueUnit; }
+      set
+      {
+        Data.TorqueUnit = value;
+
+        foreach (Data d in DataSource)
+        {
+          d.OnPropertyChanged("Torque");
+          d.OnPropertyChanged("BackTorque");
+        }
+
+        chart.SecondaryYAxis.Title = string.Format("Torque ({0})", TorqueUnit.ToString());
+        OnPropertyChanged("TorqueUnit");
+      }
+    }
+
     public DataCollection DataSource
     {
       get
@@ -67,11 +71,34 @@ namespace EngineChartViewer
     public MainWindow()
     {
       InitializeComponent();
+
+      Width = Properties.Settings.Default.Width;
+      Height = Properties.Settings.Default.Height;
+      PowerSeries.Visibility = Properties.Settings.Default.PowerSeriesVisibility;
+      TorqueSeries.Visibility = Properties.Settings.Default.TorqueSeriesVisibility;
+      BackTorqueSeries.Visibility = Properties.Settings.Default.BackTorqueSeriesVisibility;
+      PowerUnit = Properties.Settings.Default.PowerUnit;
+      TorqueUnit = Properties.Settings.Default.TorqueUnit;
+
       DataContext = this;
 
       chart.Behaviour = new ZoomBehaviour();
       chart.Series[0].YAxis = chart.SecondaryYAxis;
       chart.Series[1].YAxis = chart.SecondaryYAxis;
+    }
+
+    protected override void OnClosing(CancelEventArgs e)
+    {
+      Properties.Settings.Default.Width = this.ActualWidth;
+      Properties.Settings.Default.Height = this.ActualHeight;
+      Properties.Settings.Default.PowerSeriesVisibility = PowerSeries.Visibility;
+      Properties.Settings.Default.TorqueSeriesVisibility = TorqueSeries.Visibility;
+      Properties.Settings.Default.BackTorqueSeriesVisibility = BackTorqueSeries.Visibility;
+      Properties.Settings.Default.PowerUnit = PowerUnit;
+      Properties.Settings.Default.TorqueUnit = TorqueUnit;
+      Properties.Settings.Default.Save();
+
+      base.OnClosing(e);
     }
 
     private void Window_Drop(object sender, DragEventArgs e)
@@ -96,7 +123,7 @@ namespace EngineChartViewer
               var rpm = double.Parse(m.Groups["RPM"].Value);
               var backtorque = double.Parse(m.Groups["BackTorque"].Value);
               var torque = double.Parse(m.Groups["Torque"].Value);
-              var power = torque * (rpm * (Math.PI * 2.0) / 60.0) / 1000.0;
+              //var power = torque * (rpm * (Math.PI * 2.0) / 60.0) / 1000.0;
 
               DataSource.Add(new Data(rpm, torque, backtorque));
             }
@@ -109,11 +136,11 @@ namespace EngineChartViewer
 
           fileNameTB.Text = System.IO.Path.GetFileName(files[0]);
           maxPowerTB.Text = string.Format(
-            "Max Power : {0:f1} KW / {1:f0} rpm ({2:f0} PS / {3:f0} BHP)",
-            maxPower.Power, maxPower.RPM, maxPower.Power * 1.3596, maxPower.Power * 1.341);
+            "Max Power : {0:f1} KW ({1:f0} PS / {2:f0} BHP) @ {3:f0} rpm",
+            maxPower.RawPower, maxPower.RawPower * 1.3596, maxPower.RawPower * 1.341, maxPower.RPM);
           maxTorqueTB.Text = string.Format(
-            "Max Torque : {0:f1} Nm / {1:f0} rpm ({2:f1} Kgm)",
-            maxTorque.Torque, maxTorque.RPM, maxTorque.Torque * 0.10197);
+            "Max Torque : {0:f1} Nm ({1:f1} Kgm) @ {2:f0} rpm",
+            maxTorque.RawTorque, maxTorque.RawTorque * 0.10197, maxTorque.RPM);
         }
       }
     }
@@ -176,9 +203,99 @@ namespace EngineChartViewer
       this.Close();
     }
 
+    private void SaveAsImage_Executed(object sender, ExecutedRoutedEventArgs e)
+    {
+      double dpiX = 96.0, dpiY = 96.0;
+      var ps = PresentationSource.FromVisual(this);
+      if (ps != null)
+      {
+        dpiX = 96.0 * ps.CompositionTarget.TransformToDevice.M11;
+        dpiY = 96.0 * ps.CompositionTarget.TransformToDevice.M22;
+      }
+
+      var dlg = new SaveFileDialog()
+      {
+        AddExtension = true,
+        CheckPathExists = true,
+        DefaultExt = "png",
+        FileName = System.IO.Path.GetFileNameWithoutExtension(fileNameTB.Text) + ".png",
+        //Filter = "PNG Image (*.png)|*.png|JPEG Image (*.jpg)|*.jpg|Bitmap Image (*.bmp)|*.bmp",
+        Filter = "PNG Image (*.png)|*.png",
+        //InitialDirectory = System.IO.Path.GetDirectoryName(Environment.GetCommandLineArgs()[0]),
+        InitialDirectory = Properties.Settings.Default.LastSaveLocation,
+        OverwritePrompt = true,
+        ValidateNames = true,
+      };
+
+      if (dlg.ShowDialog(this) == true)
+      {
+        var ext = System.IO.Path.GetExtension(dlg.FileName).ToLower();
+
+        BitmapEncoder encoder = null;
+
+        switch (ext)
+        {
+          case ".png":
+            encoder = new PngBitmapEncoder();
+            break;
+          /*
+          case ".jpg":
+            encoder = new JpegBitmapEncoder();
+            break;
+          case ".bmp":
+            encoder = new BmpBitmapEncoder();
+            break;
+          */
+          default:
+            break;
+        }
+
+        if (encoder == null)
+          throw new ApplicationException("Invalid file extension");
+
+        var target = imageFrame;
+        var size = target.RenderSize;
+        var margin = 10;
+
+        var render = new RenderTargetBitmap(
+          (int)(size.Width + (margin * 2)),
+          (int)(size.Height + (margin * 2)),
+          dpiX, dpiY, PixelFormats.Pbgra32);
+
+        var dv = new DrawingVisual();
+        using (var dc = dv.RenderOpen())
+        {
+          var vb = new VisualBrush(target);
+          dc.DrawRectangle(vb, null,
+            new Rect(new Point(margin, margin), size));
+        }
+        render.Render(dv);
+
+        using (var fs = File.Open(dlg.FileName, FileMode.OpenOrCreate))
+        {
+          encoder.Frames.Add(BitmapFrame.Create(render));
+          encoder.Save(fs);
+
+          Properties.Settings.Default.LastSaveLocation = System.IO.Path.GetDirectoryName(dlg.FileName);
+        }
+      }
+    }
+
+    private void SaveAsImage_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+    {
+      e.CanExecute = DataSource.Count > 0;
+    }
+
     private void Visibility_Click(object sender, RoutedEventArgs e)
     {
-      AdjustRange();
+      if (DataSource.Count > 0)
+        AdjustRange();
+    }
+
+    private void ChangeUnit_Click(object sender, RoutedEventArgs e)
+    {
+      if (DataSource.Count > 0)
+        AdjustRange();
     }
   }
 
@@ -193,6 +310,23 @@ namespace EngineChartViewer
 
     public double RPM { get; private set; }
 
+    public double RawTorque
+    {
+      get { return _torque; }
+      set { _torque = value; OnPropertyChanged("Torque"); }
+    }
+
+    public double RawBackTorque
+    {
+      get { return _backtorque; }
+      set { _backtorque = value; OnPropertyChanged("BackTorque"); }
+    }
+
+    public double RawPower
+    {
+      get { return _torque * (RPM * (Math.PI * 2.0) / 60.0) / 1000.0; }
+    }
+
     public double Torque
     {
       get
@@ -206,7 +340,19 @@ namespace EngineChartViewer
         }
         return 0;
       }
-      set { _torque = value; OnPropertyChanged("Torque"); }
+      set
+      {
+        switch (TorqueUnit)
+        {
+          case TorqueUnits.NM:
+            _torque = value;
+            break;
+          case TorqueUnits.KGM:
+            _torque = value / 0.10197;
+            break;
+        }
+        OnPropertyChanged("Torque");
+      }
     }
 
     public double BackTorque
@@ -222,7 +368,19 @@ namespace EngineChartViewer
         }
         return 0;
       }
-      set { _backtorque = value; OnPropertyChanged("BackTorque"); }
+      set
+      {
+        switch (TorqueUnit)
+        {
+          case TorqueUnits.NM:
+            _backtorque = value;
+            break;
+          case TorqueUnits.KGM:
+            _backtorque = value / 0.10197;
+            break;
+        }
+        OnPropertyChanged("BackTorque");
+      }
     }
 
     public double Power
@@ -249,8 +407,8 @@ namespace EngineChartViewer
     public Data(double rpm, double torque, double backtorque)
     {
       RPM = rpm;
-      Torque = torque;
-      BackTorque = backtorque;
+      _torque = torque;
+      _backtorque = backtorque;
     }
 
     public void OnPropertyChanged(string propertyName)

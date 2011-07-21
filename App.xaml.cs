@@ -7,9 +7,6 @@ using System.Windows;
 
 namespace EngineChartViewer
 {
-  /// <summary>
-  /// App.xaml の相互作用ロジック
-  /// </summary>
   public partial class App : Application
   {
   }
