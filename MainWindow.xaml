@@ -44,8 +44,8 @@
           <Setter Property="Margin" Value="4,0" />
         </Style>
         <Style TargetType="Border">
-          <Setter Property="Margin" Value="8,0" />
-          <Setter Property="BorderThickness" Value="1" />
+          <Setter Property="Margin" Value="4,0" />
+          <Setter Property="BorderThickness" Value="2" />
           <Setter Property="CornerRadius" Value="4" />
         </Style>
       </StackPanel.Resources>
@@ -81,7 +81,7 @@
       <TextBlock x:Name="maxPowerTB" DockPanel.Dock="Top" Margin="4,0" />
       <TextBlock x:Name="maxTorqueTB" DockPanel.Dock="Top" Margin="4,0" />
       <c:Chart x:Name="chart" Margin="4" LegendVisibility="Collapsed"
-                LegendPosition="LeftInside" LegendVerticalAlignment="Top">
+               LegendPosition="LeftInside" LegendVerticalAlignment="Top">
         <c:Chart.XAxis>
           <c:LinearAxis x:Name="RpmAxis" Title="RPM" ShowGridlines="True" />
         </c:Chart.XAxis>
