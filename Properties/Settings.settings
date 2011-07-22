@@ -3,10 +3,10 @@
   <Profiles />
   <Settings>
     <Setting Name="Width" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">480</Value>
+      <Value Profile="(Default)">396</Value>
     </Setting>
     <Setting Name="Height" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">360</Value>
+      <Value Profile="(Default)">475</Value>
     </Setting>
     <Setting Name="PowerSeriesVisibility" Type="System.Windows.Visibility" Scope="User">
       <Value Profile="(Default)">Visible</Value>

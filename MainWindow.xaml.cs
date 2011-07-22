@@ -1,20 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Microsoft.Win32;
 using Visiblox.Charts;
 
@@ -39,12 +31,14 @@ namespace EngineChartViewer
       DataContext = this;
 
       chart.Behaviour = new ZoomBehaviour();
-      chart.Series[0].YAxis = chart.SecondaryYAxis;
       chart.Series[1].YAxis = chart.SecondaryYAxis;
+      chart.Series[2].YAxis = chart.SecondaryYAxis;
     }
 
     protected override void OnClosing(CancelEventArgs e)
     {
+      Properties.Settings.Default.Width = this.ActualWidth;
+      Properties.Settings.Default.Height = this.ActualHeight;
       Properties.Settings.Default.Save();
       base.OnClosing(e);
     }
@@ -72,7 +66,7 @@ namespace EngineChartViewer
               var backtorque = double.Parse(m.Groups["BackTorque"].Value);
               var torque = double.Parse(m.Groups["Torque"].Value);
 
-              DataSource.Add(new Data(rpm, torque, backtorque));
+              DataSource.Add(new DataPoint(rpm, torque, backtorque));
             }
           }
 
@@ -97,6 +91,16 @@ namespace EngineChartViewer
       var torqueRange = new DoubleRange();
       var powerRange = new DoubleRange();
 
+      if (PowerSeries.Visibility == Visibility.Visible)
+      {
+        var min = DataSource.Min(d => d.Power);
+        var max = DataSource.Max(d => d.Power);
+        if (min < powerRange.Minimum)
+          powerRange.Minimum = min;
+        if (powerRange.Maximum < max)
+          powerRange.Maximum = max;
+      }
+
       if (TorqueSeries.Visibility == Visibility.Visible)
       {
         var min = DataSource.Min(d => d.Torque);
@@ -115,16 +119,6 @@ namespace EngineChartViewer
           torqueRange.Minimum = min;
         if (torqueRange.Maximum < max)
           torqueRange.Maximum = max;
-      }
-
-      if (PowerSeries.Visibility == Visibility.Visible)
-      {
-        var min = DataSource.Min(d => d.Power);
-        var max = DataSource.Max(d => d.Power);
-        if (min < powerRange.Minimum)
-          powerRange.Minimum = min;
-        if (powerRange.Maximum < max)
-          powerRange.Maximum = max;
       }
 
       torqueRange.Minimum -= (torqueRange.Maximum - torqueRange.Minimum) / 10.0;
@@ -213,84 +207,19 @@ namespace EngineChartViewer
       if (DataSource.Count > 0)
         AdjustRange();
     }
-  }
 
-  public enum TorqueUnits { NM, KGM }
-  public enum PowerUnits { KW, PS, BHP }
-
-  public class DataCollection : ObservableCollection<Data> { }
-
-  public class Data : INotifyPropertyChanged
-  {
-    private double _torque, _backtorque;
-
-    public double RPM { get; private set; }
-
-    public double Torque
+    public string AppTitle
     {
-      get { return _torque; }
-      set { _torque = value; OnPropertyChanged("Torque"); }
+      get
+      {
+        return string.Format("Engine Chart Viewer v1.0 ({0}x{1})",
+          imageFrame.RenderSize.Width + 20, imageFrame.RenderSize.Height + 20);
+      }
     }
 
-    public double BackTorque
+    private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-      get { return _backtorque; }
-      set { _backtorque = value; OnPropertyChanged("BackTorque"); }
-    }
-
-    public double Power
-    {
-      get { return _torque * (RPM * (Math.PI * 2.0) / 60.0) / 1000.0; }
-    }
-
-    public Data(double rpm, double torque, double backtorque)
-    {
-      RPM = rpm;
-      _torque = torque;
-      _backtorque = backtorque;
-    }
-
-    public void OnPropertyChanged(string propertyName)
-    {
-      if (PropertyChanged != null)
-        PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-    }
-
-    public event PropertyChangedEventHandler PropertyChanged;
-  }
-
-  public class EnumBooleanConverter : IValueConverter
-  {
-    public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-    {
-      string paramString = parameter as string;
-      if (paramString == null)
-        return DependencyProperty.UnsetValue;
-      var paramEnum = Enum.Parse(value.GetType(), paramString);
-      return paramEnum.Equals(value);
-    }
-    public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-    {
-      string paramString = parameter as string;
-      if (paramString == null)
-        return DependencyProperty.UnsetValue;
-      return Enum.Parse(targetType, paramString);
-    }
-  }
-
-  public class VisibilityBooleanConverter : IValueConverter
-  {
-    public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-    {
-      if (value is Visibility)
-        return (Visibility)value == Visibility.Visible;
-      return false;
-    }
-    public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-    {
-      if (value is bool && !(bool)value)
-        return Visibility.Collapsed;
-      return Visibility.Visible;
+      OnPropertyChanged("AppTitle");
     }
   }
 }

@@ -10,9 +10,9 @@ using System.Windows;
 [assembly: AssemblyTitle("EngineChartViewer")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Microsoft")]
+[assembly: AssemblyCompany("Palm3r")]
 [assembly: AssemblyProduct("EngineChartViewer")]
-[assembly: AssemblyCopyright("Copyright © Microsoft 2011")]
+[assembly: AssemblyCopyright("Copyright © Palm3r 2011")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

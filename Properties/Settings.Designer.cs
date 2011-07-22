@@ -25,7 +25,7 @@ namespace EngineChartViewer.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("480")]
+        [global::System.Configuration.DefaultSettingValueAttribute("396")]
         public double Width {
             get {
                 return ((double)(this["Width"]));
@@ -37,7 +37,7 @@ namespace EngineChartViewer.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("360")]
+        [global::System.Configuration.DefaultSettingValueAttribute("475")]
         public double Height {
             get {
                 return ((double)(this["Height"]));

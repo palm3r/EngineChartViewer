@@ -5,10 +5,10 @@
         xmlns:l="clr-namespace:EngineChartViewer"
         xmlns:p="clr-namespace:EngineChartViewer.Properties"
         xmlns:s="clr-namespace:System;assembly=System"
-        Title="Engine Chart Viewer v1.0"
+        Title="{Binding Path=AppTitle}"
         Width="{Binding Source={x:Static p:Settings.Default}, Path=Width}"
         Height="{Binding Source={x:Static p:Settings.Default}, Path=Height}"
-        AllowDrop="True" Drop="Window_Drop">
+        AllowDrop="True" Drop="Window_Drop" SizeChanged="Window_SizeChanged">
   <Window.CommandBindings>
     <CommandBinding Command="{x:Static l:MainWindow.SaveAsImageCommand}"
                     Executed="SaveAsImage_Executed" CanExecute="SaveAsImage_CanExecute" />
@@ -20,9 +20,11 @@
                   Command="{x:Static l:MainWindow.SaveAsImageCommand}" />
   </Window.InputBindings>
   <Window.Resources>
-    <l:EnumBooleanConverter x:Key="EnumBooleanConverter" />
     <l:VisibilityBooleanConverter x:Key="VisibilityBooleanConverter" />
     <l:DataCollection x:Key="DataSource" />
+    <SolidColorBrush x:Key="PowerColor" Color="#FF4040" />
+    <SolidColorBrush x:Key="TorqueColor" Color="#4040FF" />
+    <SolidColorBrush x:Key="BackTorqueColor" Color="#40A040" />
     <Style TargetType="c:SplineSeries">
       <Setter Property="LineStrokeThickness" Value="2" />
     </Style>
@@ -30,35 +32,55 @@
   <DockPanel>
     <Menu DockPanel.Dock="Top">
       <MenuItem Header="_File">
-        <MenuItem Command="{x:Static l:MainWindow.SaveAsImageCommand}" />
+        <MenuItem Command="{x:Static l:MainWindow.SaveAsImageCommand}"
+                  InputGestureText="Ctrl+S" />
         <MenuItem Header="E_xit" Click="FileExit_Click" />
       </MenuItem>
-      <MenuItem Header="_View">
-        <MenuItem Header="Power" IsCheckable="True"
-                  IsChecked="{Binding Source={x:Static p:Settings.Default},
-                  Path=PowerSeriesVisibility, Mode=TwoWay,
-                  Converter={StaticResource VisibilityBooleanConverter}}"
-                  Click="Visibility_Click" />
-        <MenuItem Header="Torque" IsCheckable="True"
-                  IsChecked="{Binding Source={x:Static p:Settings.Default},
-                  Path=TorqueSeriesVisibility, Mode=TwoWay,
-                  Converter={StaticResource VisibilityBooleanConverter}}"
-                  Click="Visibility_Click" />
-        <MenuItem Header="Back Torque" IsCheckable="True"
-                  IsChecked="{Binding Source={x:Static p:Settings.Default},
-                  Path=BackTorqueSeriesVisibility, Mode=TwoWay,
-                  Converter={StaticResource VisibilityBooleanConverter}}"
-                  Click="Visibility_Click" />
-      </MenuItem>
     </Menu>
+    <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom"
+                Margin="4" HorizontalAlignment="Center">
+      <StackPanel.Resources>
+        <Style TargetType="TextBlock">
+          <Setter Property="Margin" Value="4,0" />
+        </Style>
+        <Style TargetType="Border">
+          <Setter Property="Margin" Value="8,0" />
+          <Setter Property="BorderThickness" Value="1" />
+          <Setter Property="CornerRadius" Value="4" />
+        </Style>
+      </StackPanel.Resources>
+      <Border BorderBrush="{StaticResource PowerColor}">
+        <ToggleButton IsChecked="{Binding Source={x:Static p:Settings.Default},
+                      Path=PowerSeriesVisibility, Mode=TwoWay,
+                      Converter={StaticResource VisibilityBooleanConverter}}"
+                      Click="Visibility_Click">
+          <TextBlock Text="Power" />
+        </ToggleButton>
+      </Border>
+      <Border BorderBrush="{StaticResource TorqueColor}">
+        <ToggleButton IsChecked="{Binding Source={x:Static p:Settings.Default},
+                      Path=TorqueSeriesVisibility, Mode=TwoWay,
+                      Converter={StaticResource VisibilityBooleanConverter}}"
+                      Click="Visibility_Click">
+          <TextBlock Text="Torque" />
+        </ToggleButton>
+      </Border>
+      <Border BorderBrush="{StaticResource BackTorqueColor}">
+        <ToggleButton IsChecked="{Binding Source={x:Static p:Settings.Default},
+                      Path=BackTorqueSeriesVisibility, Mode=TwoWay,
+                      Converter={StaticResource VisibilityBooleanConverter}}"
+                      Click="Visibility_Click">
+          <TextBlock Text="Back Torque" />
+        </ToggleButton>
+      </Border>
+    </StackPanel>
     <DockPanel x:Name="imageFrame" DockPanel.Dock="Top">
       <TextBlock x:Name="fileNameTB" DockPanel.Dock="Top"
                   Margin="4" FontSize="14" FontWeight="Bold"
                   Text="Drop engine.ini here" />
       <TextBlock x:Name="maxPowerTB" DockPanel.Dock="Top" Margin="4,0" />
       <TextBlock x:Name="maxTorqueTB" DockPanel.Dock="Top" Margin="4,0" />
-
-      <c:Chart x:Name="chart" Margin="4"
+      <c:Chart x:Name="chart" Margin="4" LegendVisibility="Collapsed"
                 LegendPosition="LeftInside" LegendVerticalAlignment="Top">
         <c:Chart.XAxis>
           <c:LinearAxis x:Name="RpmAxis" Title="RPM" ShowGridlines="True" />
@@ -74,7 +96,19 @@
                         ShowMajorTicks="True" ShowMinorTicks="True" />
         </c:Chart.SecondaryYAxis>
         <c:Chart.Series>
-          <c:SplineSeries x:Name="TorqueSeries" LineStroke="#4040FF" LineStrokeThickness="2"
+          <c:SplineSeries x:Name="PowerSeries"
+                          LineStroke="{StaticResource PowerColor}" LineStrokeThickness="2"
+                          Visibility="{Binding Source={x:Static p:Settings.Default},
+                          Path=PowerSeriesVisibility, Mode=TwoWay}"
+                          ToolTip="{Binding Path=.}">
+            <c:SplineSeries.DataSeries>
+              <c:BindableDataSeries Title="Power" ItemsSource="{StaticResource DataSource}"
+                                    YValueBinding="{Binding Path=Power}"
+                                    XValueBinding="{Binding Path=RPM}" />
+            </c:SplineSeries.DataSeries>
+          </c:SplineSeries>
+          <c:SplineSeries x:Name="TorqueSeries"
+                          LineStroke="{StaticResource TorqueColor}" LineStrokeThickness="2"
                           Visibility="{Binding Source={x:Static p:Settings.Default},
                           Path=TorqueSeriesVisibility, Mode=TwoWay}">
             <c:SplineSeries.DataSeries>
@@ -83,21 +117,13 @@
                                     XValueBinding="{Binding Path=RPM}" />
             </c:SplineSeries.DataSeries>
           </c:SplineSeries>
-          <c:SplineSeries x:Name="BackTorqueSeries" LineStroke="#40FF40" LineStrokeThickness="2"
+          <c:SplineSeries x:Name="BackTorqueSeries"
+                          LineStroke="{StaticResource BackTorqueColor}" LineStrokeThickness="2"
                           Visibility="{Binding Source={x:Static p:Settings.Default},
                           Path=BackTorqueSeriesVisibility, Mode=TwoWay}">
             <c:SplineSeries.DataSeries>
               <c:BindableDataSeries Title="Back Torque" ItemsSource="{StaticResource DataSource}"
                                     YValueBinding="{Binding Path=BackTorque}"
-                                    XValueBinding="{Binding Path=RPM}" />
-            </c:SplineSeries.DataSeries>
-          </c:SplineSeries>
-          <c:SplineSeries x:Name="PowerSeries" LineStroke="#FF4040" LineStrokeThickness="2"
-                          Visibility="{Binding Source={x:Static p:Settings.Default},
-                          Path=PowerSeriesVisibility, Mode=TwoWay}">
-            <c:SplineSeries.DataSeries>
-              <c:BindableDataSeries Title="Power" ItemsSource="{StaticResource DataSource}"
-                                    YValueBinding="{Binding Path=Power}"
                                     XValueBinding="{Binding Path=RPM}" />
             </c:SplineSeries.DataSeries>
           </c:SplineSeries>
