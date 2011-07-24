@@ -9,7 +9,7 @@ namespace EngineChartViewer
   public enum TorqueUnits { NM, KGM }
   public enum PowerUnits { KW, PS, BHP }
 
-  public class DataCollection : ObservableCollection<DataPoint> { }
+  public class DataSeries : ObservableCollection<DataPoint> { }
 
   public class DataPoint : INotifyPropertyChanged
   {

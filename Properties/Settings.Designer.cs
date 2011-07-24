@@ -37,7 +37,7 @@ namespace EngineChartViewer.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("475")]
+        [global::System.Configuration.DefaultSettingValueAttribute("476")]
         public double Height {
             get {
                 return ((double)(this["Height"]));
@@ -92,6 +92,18 @@ namespace EngineChartViewer.Properties {
             }
             set {
                 this["LastSaveLocation"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string LastOpenLocation {
+            get {
+                return ((string)(this["LastOpenLocation"]));
+            }
+            set {
+                this["LastOpenLocation"] = value;
             }
         }
     }

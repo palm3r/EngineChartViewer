@@ -6,7 +6,7 @@
       <Value Profile="(Default)">396</Value>
     </Setting>
     <Setting Name="Height" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">475</Value>
+      <Value Profile="(Default)">476</Value>
     </Setting>
     <Setting Name="PowerSeriesVisibility" Type="System.Windows.Visibility" Scope="User">
       <Value Profile="(Default)">Visible</Value>
@@ -18,6 +18,9 @@
       <Value Profile="(Default)">Visible</Value>
     </Setting>
     <Setting Name="LastSaveLocation" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="LastOpenLocation" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
   </Settings>

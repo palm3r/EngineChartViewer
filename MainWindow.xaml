@@ -10,10 +10,14 @@
         Height="{Binding Source={x:Static p:Settings.Default}, Path=Height}"
         AllowDrop="True" Drop="Window_Drop" SizeChanged="Window_SizeChanged">
   <Window.CommandBindings>
+    <CommandBinding Command="{x:Static l:MainWindow.OpenCommand}"
+                    Executed="Open_Executed" />
     <CommandBinding Command="{x:Static l:MainWindow.SaveAsImageCommand}"
                     Executed="SaveAsImage_Executed" CanExecute="SaveAsImage_CanExecute" />
   </Window.CommandBindings>
   <Window.InputBindings>
+    <KeyBinding Modifiers="Control" Key="O"
+                Command="{x:Static l:MainWindow.OpenCommand}" />
     <KeyBinding Modifiers="Control" Key="S"
                 Command="{x:Static l:MainWindow.SaveAsImageCommand}" />
     <MouseBinding MouseAction="MiddleClick"
@@ -21,34 +25,32 @@
   </Window.InputBindings>
   <Window.Resources>
     <l:VisibilityBooleanConverter x:Key="VisibilityBooleanConverter" />
-    <l:DataCollection x:Key="DataSource" />
+    <l:DataSeries x:Key="DataSeries" />
     <SolidColorBrush x:Key="PowerColor" Color="#FF4040" />
     <SolidColorBrush x:Key="TorqueColor" Color="#4040FF" />
     <SolidColorBrush x:Key="BackTorqueColor" Color="#40A040" />
-    <Style TargetType="c:SplineSeries">
-      <Setter Property="LineStrokeThickness" Value="2" />
-    </Style>
   </Window.Resources>
   <DockPanel>
     <Menu DockPanel.Dock="Top">
       <MenuItem Header="_File">
+        <MenuItem Command="{x:Static l:MainWindow.OpenCommand}"
+                  InputGestureText="Ctrl+O" />
         <MenuItem Command="{x:Static l:MainWindow.SaveAsImageCommand}"
                   InputGestureText="Ctrl+S" />
         <MenuItem Header="E_xit" Click="FileExit_Click" />
       </MenuItem>
     </Menu>
-    <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom"
-                Margin="4" HorizontalAlignment="Center">
-      <StackPanel.Resources>
+    <ToolBar DockPanel.Dock="Top">
+      <ToolBar.Resources>
         <Style TargetType="TextBlock">
-          <Setter Property="Margin" Value="4,0" />
+          <Setter Property="Margin" Value="2,0" />
         </Style>
         <Style TargetType="Border">
-          <Setter Property="Margin" Value="4,0" />
-          <Setter Property="BorderThickness" Value="2" />
+          <Setter Property="Margin" Value="2" />
+          <Setter Property="BorderThickness" Value="1" />
           <Setter Property="CornerRadius" Value="4" />
         </Style>
-      </StackPanel.Resources>
+      </ToolBar.Resources>
       <Border BorderBrush="{StaticResource PowerColor}">
         <ToggleButton IsChecked="{Binding Source={x:Static p:Settings.Default},
                       Path=PowerSeriesVisibility, Mode=TwoWay,
@@ -73,7 +75,7 @@
           <TextBlock Text="Back Torque" />
         </ToggleButton>
       </Border>
-    </StackPanel>
+    </ToolBar>
     <DockPanel x:Name="imageFrame" DockPanel.Dock="Top">
       <TextBlock x:Name="fileNameTB" DockPanel.Dock="Top"
                   Margin="4" FontSize="14" FontWeight="Bold"
@@ -82,47 +84,52 @@
       <TextBlock x:Name="maxTorqueTB" DockPanel.Dock="Top" Margin="4,0" />
       <c:Chart x:Name="chart" Margin="4" LegendVisibility="Collapsed"
                LegendPosition="LeftInside" LegendVerticalAlignment="Top">
+        <c:Chart.Behaviour>
+          <c:BehaviourManager AllowMultipleEnabled="True">
+            <c:ZoomBehaviour />
+            <c:PanBehaviour />
+          </c:BehaviourManager>
+        </c:Chart.Behaviour>
         <c:Chart.XAxis>
           <c:LinearAxis x:Name="RpmAxis" Title="RPM" ShowGridlines="True" />
         </c:Chart.XAxis>
         <c:Chart.YAxis>
           <c:LinearAxis x:Name="PowerAxis" Title="Power (KW)"
-                        Foreground="Red" ShowGridlines="True"
+                        Foreground="{StaticResource PowerColor}" ShowGridlines="True"
                         ShowMajorTicks="True" ShowMinorTicks="True" />
         </c:Chart.YAxis>
         <c:Chart.SecondaryYAxis>
           <c:LinearAxis x:Name="TorqueAxis" Title="Torque (Nm)"
-                        Foreground="Blue" ShowGridlines="False"
+                        Foreground="{StaticResource TorqueColor}" ShowGridlines="False"
                         ShowMajorTicks="True" ShowMinorTicks="True" />
         </c:Chart.SecondaryYAxis>
         <c:Chart.Series>
           <c:SplineSeries x:Name="PowerSeries"
-                          LineStroke="{StaticResource PowerColor}" LineStrokeThickness="2"
+                          LineStroke="{StaticResource PowerColor}"
                           Visibility="{Binding Source={x:Static p:Settings.Default},
-                          Path=PowerSeriesVisibility, Mode=TwoWay}"
-                          ToolTip="{Binding Path=.}">
+                          Path=PowerSeriesVisibility, Mode=TwoWay}">
             <c:SplineSeries.DataSeries>
-              <c:BindableDataSeries Title="Power" ItemsSource="{StaticResource DataSource}"
+              <c:BindableDataSeries Title="Power" ItemsSource="{StaticResource DataSeries}"
                                     YValueBinding="{Binding Path=Power}"
                                     XValueBinding="{Binding Path=RPM}" />
             </c:SplineSeries.DataSeries>
           </c:SplineSeries>
           <c:SplineSeries x:Name="TorqueSeries"
-                          LineStroke="{StaticResource TorqueColor}" LineStrokeThickness="2"
+                          LineStroke="{StaticResource TorqueColor}"
                           Visibility="{Binding Source={x:Static p:Settings.Default},
                           Path=TorqueSeriesVisibility, Mode=TwoWay}">
             <c:SplineSeries.DataSeries>
-              <c:BindableDataSeries Title="Torque" ItemsSource="{StaticResource DataSource}"
+              <c:BindableDataSeries Title="Torque" ItemsSource="{StaticResource DataSeries}"
                                     YValueBinding="{Binding Path=Torque}"
                                     XValueBinding="{Binding Path=RPM}" />
             </c:SplineSeries.DataSeries>
           </c:SplineSeries>
           <c:SplineSeries x:Name="BackTorqueSeries"
-                          LineStroke="{StaticResource BackTorqueColor}" LineStrokeThickness="2"
+                          LineStroke="{StaticResource BackTorqueColor}"
                           Visibility="{Binding Source={x:Static p:Settings.Default},
                           Path=BackTorqueSeriesVisibility, Mode=TwoWay}">
             <c:SplineSeries.DataSeries>
-              <c:BindableDataSeries Title="Back Torque" ItemsSource="{StaticResource DataSource}"
+              <c:BindableDataSeries Title="Back Torque" ItemsSource="{StaticResource DataSeries}"
                                     YValueBinding="{Binding Path=BackTorque}"
                                     XValueBinding="{Binding Path=RPM}" />
             </c:SplineSeries.DataSeries>
