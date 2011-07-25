@@ -25,7 +25,7 @@ namespace EngineChartViewer.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("396")]
+        [global::System.Configuration.DefaultSettingValueAttribute("476")]
         public double Width {
             get {
                 return ((double)(this["Width"]));
@@ -37,7 +37,7 @@ namespace EngineChartViewer.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("476")]
+        [global::System.Configuration.DefaultSettingValueAttribute("460")]
         public double Height {
             get {
                 return ((double)(this["Height"]));
@@ -104,6 +104,66 @@ namespace EngineChartViewer.Properties {
             }
             set {
                 this["LastOpenLocation"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("KW")]
+        public global::EngineChartViewer.PowerUnits PowerUnit {
+            get {
+                return ((global::EngineChartViewer.PowerUnits)(this["PowerUnit"]));
+            }
+            set {
+                this["PowerUnit"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Nm")]
+        public global::EngineChartViewer.TorqueUnits TorqueUnit {
+            get {
+                return ((global::EngineChartViewer.TorqueUnits)(this["TorqueUnit"]));
+            }
+            set {
+                this["TorqueUnit"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("#FFFF0000")]
+        public global::System.Windows.Media.SolidColorBrush PowerColor {
+            get {
+                return ((global::System.Windows.Media.SolidColorBrush)(this["PowerColor"]));
+            }
+            set {
+                this["PowerColor"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("#FF0000FF")]
+        public global::System.Windows.Media.SolidColorBrush TorqueColor {
+            get {
+                return ((global::System.Windows.Media.SolidColorBrush)(this["TorqueColor"]));
+            }
+            set {
+                this["TorqueColor"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("#FF008000")]
+        public global::System.Windows.Media.SolidColorBrush BackTorqueColor {
+            get {
+                return ((global::System.Windows.Media.SolidColorBrush)(this["BackTorqueColor"]));
+            }
+            set {
+                this["BackTorqueColor"] = value;
             }
         }
     }

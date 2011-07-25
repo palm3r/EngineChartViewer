@@ -1,4 +1,6 @@
-﻿namespace EngineChartViewer.Properties
+﻿using System.Collections.Generic;
+
+namespace EngineChartViewer.Properties
 {
   // このクラスでは設定クラスでの特定のイベントを処理することができます:
   //  SettingChanging イベントは、設定値が変更される前に発生します。
@@ -7,6 +9,13 @@
   //  SettingsSaving イベントは、設定値が保存される前に発生します。
   internal sealed partial class Settings
   {
+    [global::System.Configuration.UserScopedSettingAttribute()]
+    public List<string> RecentFiles
+    {
+      get { return (List<string>)this["RecentFiles"]; }
+      set { this["RecentFiles"] = value; }
+    }
+
     public Settings()
     {
       // // 設定の保存と変更のイベント ハンドラーを追加するには、以下の行のコメントを解除します:
