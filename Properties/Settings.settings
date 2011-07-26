@@ -6,7 +6,7 @@
       <Value Profile="(Default)">476</Value>
     </Setting>
     <Setting Name="Height" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">460</Value>
+      <Value Profile="(Default)">500</Value>
     </Setting>
     <Setting Name="PowerSeriesVisibility" Type="System.Windows.Visibility" Scope="User">
       <Value Profile="(Default)">Visible</Value>
@@ -37,6 +37,12 @@
     </Setting>
     <Setting Name="BackTorqueColor" Type="System.Windows.Media.SolidColorBrush" Scope="User">
       <Value Profile="(Default)">#FF008000</Value>
+    </Setting>
+    <Setting Name="FuelConsumptionColor" Type="System.Windows.Media.SolidColorBrush" Scope="User">
+      <Value Profile="(Default)">#FF806000</Value>
+    </Setting>
+    <Setting Name="FuelConsumptionSeriesVisibility" Type="System.Windows.Visibility" Scope="User">
+      <Value Profile="(Default)">Visible</Value>
     </Setting>
   </Settings>
 </SettingsFile>

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -6,11 +7,13 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using Visiblox.Charts;
+using System.Windows.Controls;
 
 namespace EngineChartViewer
 {
@@ -21,6 +24,9 @@ namespace EngineChartViewer
 
     public static readonly ICommand SaveAsImageCommand =
       new RoutedUICommand("Save as Image", "SaveAsImageCommand", typeof(MainWindow));
+
+    public static readonly ICommand ReloadCommand =
+      new RoutedUICommand("Reload", "ReloadCommand", typeof(MainWindow));
 
     public static readonly ICommand ExitCommand =
       new RoutedUICommand("Exit", "ExitCommand", typeof(MainWindow));
@@ -51,6 +57,7 @@ namespace EngineChartViewer
 
       chart.Series[1].YAxis = chart.SecondaryYAxis;
       chart.Series[2].YAxis = chart.SecondaryYAxis;
+      chart.Series[3].YAxis = chart.AdditionalSecondaryYAxes[0];
     }
 
     protected override void OnClosing(CancelEventArgs e)
@@ -63,56 +70,82 @@ namespace EngineChartViewer
 
     public void Open(string filePath)
     {
-      using (var reader = new StreamReader(filePath, Encoding.ASCII))
-      {
-        var regex = new Regex(
-          @"^RPMTorque=\(\s*(?<RPM>[+-]?\d*\.?\d*),\s*(?<BackTorque>[+-]?\d*\.?\d*),\s*(?<Torque>[+-]?\d*\.?\d*)\).*",
-          RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+      var emptyRegex = new Regex(@"^\s*(?:\/\/.*)?$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
-        DataSeries.Clear();
+      var rpmTorqueRegex = new Regex(
+        @"^RPMTorque=\(\s*(?<rpm>[+-]?\d*\.?\d*),\s*(?<backtorque>[+-]?\d*\.?\d*),\s*(?<torque>[+-]?\d*\.?\d*)\).*",
+        RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
-        string line = "";
-        while ((line = reader.ReadLine()) != null)
-        {
-          var m = regex.Match(line);
-          if (m.Success)
+      var keyValueRegex = new Regex(
+        @"^(?<key>[a-z0-9]+)=((?<number>[^\(\)""\/]+)|""(?<string>[^""\/]+)""|\((?<list>(\s*(\d+(?:\.\d+)?)\s*,?)+)\)).*$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+      var lines = File.ReadAllLines(filePath, Encoding.ASCII);
+
+      DataSeries.Data = lines.Select(line => keyValueRegex.Match(line))
+        .Where(m => m.Success && m.Groups["key"].Value.ToLower() != "rpmtorque")
+        .Select(m =>
           {
-            var rpm = double.Parse(m.Groups["RPM"].Value);
-            var backtorque = double.Parse(m.Groups["BackTorque"].Value);
-            var torque = double.Parse(m.Groups["Torque"].Value);
+            var key = m.Groups["key"].Value;
 
-            DataSeries.Add(new DataPoint(rpm, torque, backtorque));
-          }
-        }
+            if (m.Groups["number"].Success)
+            {
+              var value = double.Parse(m.Groups["number"].Value);
+              return new KeyValuePair<string, dynamic>(key, value);
+            }
+            else if (m.Groups["string"].Success)
+            {
+              var value = m.Groups["string"].Value;
+              return new KeyValuePair<string, dynamic>(key, value);
+            }
+            else if (m.Groups["list"].Success)
+            {
+              var list = m.Groups["list"].Value
+                .Split(new char[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(value => double.Parse(value))
+                .ToList();
+              return new KeyValuePair<string, dynamic>(key, list);
+            }
+            throw new InvalidDataException();
+          })
+          .ToDictionary(item => item.Key, item => item.Value);
 
-        var mp = DataSeries.OrderBy(d => d.Power).Last();
-        var mt = DataSeries.OrderBy(d => d.Torque).Last();
+      DataSeries.Clear();
 
-        fileNameTB.Text = System.IO.Path.GetFileName(filePath);
-        maxPowerTB.Text = string.Format(
-          "{0:f1} KW ({1:f1} PS / {2:f1} HP) @ {3:f0} rpm",
-          mp.PowerKW, mp.PowerKW * Const.KW_PS, mp.PowerKW * Const.KW_HP, mp.RPM);
-        maxTorqueTB.Text = string.Format(
-          "{0:f1} Nm ({1:f1} Kgm) @ {2:f0} rpm",
-          mt.TorqueNM, mt.TorqueNM * Const.NM_KGM, mt.RPM);
+      lines.Select(line => rpmTorqueRegex.Match(line))
+        .Where(m => m.Success)
+        .Select(m => new DataPoint(
+          double.Parse(m.Groups["rpm"].Value),
+          double.Parse(m.Groups["torque"].Value),
+          double.Parse(m.Groups["backtorque"].Value)
+          ))
+        .ToList()
+        .ForEach(dp => DataSeries.Add(dp));
 
-        Properties.Settings.Default.LastOpenLocation = System.IO.Path.GetDirectoryName(filePath);
+      Properties.Settings.Default.LastOpenLocation = System.IO.Path.GetDirectoryName(filePath);
 
-        if (Properties.Settings.Default.RecentFiles == null)
-        {
-          Properties.Settings.Default.RecentFiles = new List<string>();
-        }
-        if (Properties.Settings.Default.RecentFiles.Contains(filePath))
-        {
-          Properties.Settings.Default.RecentFiles.Remove(filePath);
-        }
-        Properties.Settings.Default.RecentFiles.Insert(0, filePath);
-        if (Properties.Settings.Default.RecentFiles.Count > 10)
-          Properties.Settings.Default.RecentFiles.RemoveAt(10);
-
-        AdjustRange();
-        OnPropertyChanged("RecentFiles");
+      if (Properties.Settings.Default.RecentFiles == null)
+      {
+        Properties.Settings.Default.RecentFiles = new List<string>();
       }
+
+      if (Properties.Settings.Default.RecentFiles.Contains(filePath))
+      {
+        Properties.Settings.Default.RecentFiles.Remove(filePath);
+      }
+
+      Properties.Settings.Default.RecentFiles.Insert(0, filePath);
+
+      if (Properties.Settings.Default.RecentFiles.Count > 10)
+      {
+        Properties.Settings.Default.RecentFiles.RemoveAt(10);
+      }
+
+      fileNameTB.Text = System.IO.Path.GetFileName(filePath);
+
+      AdjustRange();
+      OnPropertyChanged("DataSeries", "RecentFiles");
     }
 
     private void SameAsImage(string filePath)
@@ -157,46 +190,67 @@ namespace EngineChartViewer
     {
       if (DataSeries.Count > 0)
       {
-        var pr = new DoubleRange();
-        var tr = new DoubleRange();
+        var power = new DoubleRange();
+        var torque = new DoubleRange();
+        var fuel = new DoubleRange();
 
-        if (PowerSeries.Visibility == Visibility.Visible)
+        if (chart.Series[0].Element.Visibility == Visibility.Visible)
         {
           var min = DataSeries.Min(dp => dp.Power);
           var max = DataSeries.Max(dp => dp.Power);
-          if (min < pr.Minimum)
-            pr.Minimum = min;
-          if (pr.Maximum < max)
-            pr.Maximum = max;
+          if (min < power.Minimum)
+            power.Minimum = min;
+          if (power.Maximum < max)
+            power.Maximum = max;
         }
 
-        if (TorqueSeries.Visibility == Visibility.Visible)
+        if (chart.Series[1].Element.Visibility == Visibility.Visible)
         {
           var min = DataSeries.Min(dp => dp.Torque);
           var max = DataSeries.Max(dp => dp.Torque);
-          if (min < tr.Minimum)
-            tr.Minimum = min;
-          if (tr.Maximum < max)
-            tr.Maximum = max;
+          if (min < torque.Minimum)
+            torque.Minimum = min;
+          if (torque.Maximum < max)
+            torque.Maximum = max;
         }
 
-        if (BackTorqueSeries.Visibility == Visibility.Visible)
+        if (chart.Series[2].Element.Visibility == Visibility.Visible)
         {
           var min = DataSeries.Min(dp => dp.BackTorque);
           var max = DataSeries.Max(dp => dp.BackTorque);
-          if (min < tr.Minimum)
-            tr.Minimum = min;
-          if (tr.Maximum < max)
-            tr.Maximum = max;
+          if (min < torque.Minimum)
+            torque.Minimum = min;
+          if (torque.Maximum < max)
+            torque.Maximum = max;
         }
 
-        pr.Minimum -= (pr.Maximum - pr.Minimum) / 10.0;
-        pr.Maximum += (pr.Maximum - pr.Minimum) / 10.0;
-        PowerAxis.Range = pr;
+        if (chart.Series[3].Element.Visibility == Visibility.Visible)
+        {
+          var min = DataSeries.Min(dp => dp.FuelConsumption);
+          var max = DataSeries.Max(dp => dp.FuelConsumption);
+          if (min < fuel.Minimum)
+            fuel.Minimum = min;
+          if (fuel.Maximum < max)
+            fuel.Maximum = max;
+        }
 
-        tr.Minimum -= (tr.Maximum - tr.Minimum) / 10.0;
-        tr.Maximum += (tr.Maximum - tr.Minimum) / 10.0;
-        TorqueAxis.Range = tr;
+        power.Minimum -= (power.Maximum - power.Minimum) / 10.0;
+        power.Maximum += (power.Maximum - power.Minimum) / 10.0;
+        chart.YAxis.Range = power;
+        chart.YAxis.Element.Visibility = chart.Series[0].Element.Visibility;
+
+        torque.Minimum -= (torque.Maximum - torque.Minimum) / 10.0;
+        torque.Maximum += (torque.Maximum - torque.Minimum) / 10.0;
+        chart.SecondaryYAxis.Range = torque;
+        chart.SecondaryYAxis.Element.Visibility =
+          chart.Series[1].Element.Visibility == Visibility.Visible ||
+          chart.Series[2].Element.Visibility == Visibility.Visible
+          ? Visibility.Visible : Visibility.Collapsed;
+
+        fuel.Minimum -= (fuel.Maximum - fuel.Minimum) / 10.0;
+        fuel.Maximum += (fuel.Maximum - fuel.Minimum) / 10.0;
+        chart.AdditionalSecondaryYAxes[0].Range = fuel;
+        chart.AdditionalSecondaryYAxes[0].Element.Visibility = chart.Series[3].Element.Visibility;
       }
     }
 
@@ -269,9 +323,27 @@ namespace EngineChartViewer
       e.CanExecute = DataSeries.Count > 0;
     }
 
+    private void Reload_Executed(object sender, ExecutedRoutedEventArgs e)
+    {
+      //Open(Properties.Settings.Default.RecentFiles[0]);
+      AdjustRange();
+    }
+
+    private void Reload_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+    {
+      e.CanExecute = DataSeries.Count > 0;
+    }
+
     private void ReloadFile_Clicked(object sender, RoutedEventArgs e)
     {
-      Open(Properties.Settings.Default.RecentFiles[0]);
+      if (DataSeries.Count > 0)
+      {
+        Open(Properties.Settings.Default.RecentFiles[0]);
+      }
+      else
+      {
+        AdjustRange();
+      }
     }
 
     public string AppTitle
@@ -286,6 +358,11 @@ namespace EngineChartViewer
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
     {
       OnPropertyChanged("AppTitle");
+    }
+
+    private void Boost_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+      AdjustRange();
     }
   }
 }

@@ -13,6 +13,8 @@
                     Executed="Open_Executed" />
     <CommandBinding Command="{x:Static l:MainWindow.SaveAsImageCommand}"
                     Executed="SaveAsImage_Executed" CanExecute="SaveAsImage_CanExecute" />
+    <CommandBinding Command="{x:Static l:MainWindow.ReloadCommand}"
+                    Executed="Reload_Executed" CanExecute="Reload_CanExecute" />
     <CommandBinding Command="{x:Static l:MainWindow.ExitCommand}"
                     Executed="Exit_Executed" />
   </Window.CommandBindings>
@@ -23,16 +25,23 @@
                 Command="{x:Static l:MainWindow.SaveAsImageCommand}" />
     <MouseBinding MouseAction="MiddleClick"
                   Command="{x:Static l:MainWindow.SaveAsImageCommand}" />
+    <KeyBinding Modifiers="Control" Key="R"
+                Command="{x:Static l:MainWindow.ReloadCommand}" />
+    <KeyBinding Key="F5"
+                Command="{x:Static l:MainWindow.ReloadCommand}" />
     <KeyBinding Modifiers="Alt" Key="F4"
                 Command="{x:Static l:MainWindow.ExitCommand}" />
   </Window.InputBindings>
   <Window.Resources>
+    <l:DataSeries x:Key="DataSeries" />
     <l:EnumBooleanConverter x:Key="EnumBooleanConverter" />
     <l:VisibilityBooleanConverter x:Key="VisibilityBooleanConverter" />
     <l:KW_PS_Converter x:Key="KW_PS_Converter" />
     <l:KW_HP_Converter x:Key="KW_HP_Converter" />
     <l:NM_KGM_Converter x:Key="NM_KGM_Converter" />
-    <l:DataSeries x:Key="DataSeries" />
+    <l:DataSeriesBoostMaxConverter x:Key="DataSeriesBoostMaxConverter" />
+    <l:MaxPowerStringConverter x:Key="MaxPowerStringConverter" />
+    <l:MaxTorqueStringConverter x:Key="MaxTorqueStringConverter" />
     <ContextMenu x:Key="PowerUnitContextMenu">
       <MenuItem Header="KW" IsCheckable="True"
                 IsChecked="{Binding Source={x:Static p:Settings.Default},
@@ -67,6 +76,17 @@
                 ConverterParameter=Kgm}"
                 Click="ReloadFile_Clicked" />
     </ContextMenu>
+    <Style x:Key="axisLabelStyle" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="Foreground"
+              Value="{Binding Path=Foreground,
+              RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type c:LinearAxis}}}" />
+    </Style>
+    <Style x:Key="axisLineStyle" TargetType="Line">
+      <Setter Property="Stroke"
+              Value="{Binding Path=Foreground,
+              RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type c:LinearAxis}}}" />
+    </Style>
   </Window.Resources>
   <DockPanel>
     <Menu DockPanel.Dock="Top">
@@ -80,8 +100,10 @@
                   ItemsSource="{Binding Path=RecentFiles}">
           <MenuItem.ItemContainerStyle>
             <Style>
-              <Setter Property="MenuItem.Header" Value="{Binding Path=Header}" />
-              <Setter Property="MenuItem.Command" Value="{Binding Path=Command}" />
+              <Setter Property="MenuItem.Header"
+                      Value="{Binding Path=Header}" />
+              <Setter Property="MenuItem.Command"
+                      Value="{Binding Path=Command}" />
             </Style>
           </MenuItem.ItemContainerStyle>
         </MenuItem>
@@ -126,20 +148,40 @@
             <TextBlock Text="Back Torque" />
           </ToggleButton>
         </Border>
+        <Border BorderBrush="{Binding Source={x:Static p:Settings.Default}, Path=FuelConsumptionColor}">
+          <ToggleButton IsChecked="{Binding Source={x:Static p:Settings.Default},
+                        Path=FuelConsumptionSeriesVisibility, Mode=TwoWay,
+                        Converter={StaticResource VisibilityBooleanConverter}}"
+                        Click="ReloadFile_Clicked">
+            <TextBlock Text="Fuel Consumption" />
+          </ToggleButton>
+        </Border>
+        <Separator Margin="4,0" />
+        <Slider Width="50" VerticalAlignment="Center"
+                Minimum="{Binding Path=DataSeries.BoostMin}"
+                Maximum="{Binding Path=DataSeries, Converter={StaticResource DataSeriesBoostMaxConverter}}"
+                Interval="{Binding Path=DataSeries.BoostStep}"
+                IsSnapToTickEnabled="True"
+                TickPlacement="Both"
+                TickFrequency="{Binding Path=DataSeries.BoostStep}"
+                Value="{Binding Path=DataSeries.ActualBoost}"
+                ValueChanged="Boost_ValueChanged"
+                />
+        <TextBlock Text="{Binding Path=DataSeries.ActualBoost, StringFormat=\{0\}}"
+                   VerticalAlignment="Center" />
       </ToolBar>
     </ToolBarPanel>
     <StatusBar x:Name="statusBar" DockPanel.Dock="Bottom">
       <StatusBarItem>
         <StackPanel Orientation="Horizontal">
-          <TextBlock Text="RPM: " />
           <TextBlock Text="{Binding ElementName=trackball, Path=CurrentPoints[0].X, StringFormat=0}" />
+          <TextBlock Text=" rpm" />
         </StackPanel>
       </StatusBarItem>
       <Separator />
       <StatusBarItem ContextMenu="{StaticResource PowerUnitContextMenu}"
                      Foreground="{Binding Source={x:Static p:Settings.Default}, Path=PowerColor}">
         <StackPanel Orientation="Horizontal">
-          <TextBlock Text="Power: " />
           <TextBlock Text="{Binding ElementName=trackball, Path=CurrentPoints[0].Y, StringFormat=0.0}" />
           <TextBlock Text=" " />
           <TextBlock Text="{Binding Source={x:Static p:Settings.Default}, Path=PowerUnit}" />
@@ -149,7 +191,6 @@
       <StatusBarItem ContextMenu="{StaticResource TorqueUnitContextMenu}"
                      Foreground="{Binding Source={x:Static p:Settings.Default}, Path=TorqueColor}">
         <StackPanel Orientation="Horizontal">
-          <TextBlock Text="Torque: " />
           <TextBlock Text="{Binding ElementName=trackball, Path=CurrentPoints[1].Y, StringFormat=0.0}" />
           <TextBlock Text=" " />
           <TextBlock Text="{Binding Source={x:Static p:Settings.Default}, Path=TorqueUnit}" />
@@ -159,10 +200,17 @@
       <StatusBarItem ContextMenu="{StaticResource TorqueUnitContextMenu}"
                      Foreground="{Binding Source={x:Static p:Settings.Default}, Path=BackTorqueColor}">
         <StackPanel Orientation="Horizontal">
-          <TextBlock Text="BackTorque: " />
           <TextBlock Text="{Binding ElementName=trackball, Path=CurrentPoints[2].Y, StringFormat=0.0}" />
           <TextBlock Text=" " />
           <TextBlock Text="{Binding Source={x:Static p:Settings.Default}, Path=TorqueUnit}" />
+        </StackPanel>
+      </StatusBarItem>
+      <Separator />
+      <StatusBarItem Foreground="{Binding Source={x:Static p:Settings.Default}, Path=FuelConsumptionColor}">
+        <StackPanel Orientation="Horizontal">
+          <TextBlock Text="{Binding ElementName=trackball, Path=CurrentPoints[3].Y, StringFormat=0.0}" />
+          <TextBlock Text=" " />
+          <TextBlock Text="L/min" />
         </StackPanel>
       </StatusBarItem>
     </StatusBar>
@@ -179,10 +227,18 @@
         </Grid.RowDefinitions>
         <TextBlock Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="0"
                    x:Name="fileNameTB" Margin="4" FontSize="14" FontWeight="Bold" />
-        <TextBlock Grid.Column="0" Grid.Row="1" Text="Power:" Margin="4,0" />
-        <TextBlock Grid.Column="1" Grid.Row="1" x:Name="maxPowerTB" Margin="4,0" />
-        <TextBlock Grid.Column="0" Grid.Row="2" Text="Torque:" Margin="4,0 "/>
-        <TextBlock Grid.Column="1" Grid.Row="2" x:Name="maxTorqueTB" Margin="4,0" />
+        <TextBlock Grid.Column="0" Grid.Row="1" Margin="4,0"
+                   Text="Power:"
+                   />
+        <TextBlock Grid.Column="1" Grid.Row="1" Margin="4,0"
+                   Text="{Binding Path=DataSeries.MaxPower, Converter={StaticResource MaxPowerStringConverter}}"
+                   />
+        <TextBlock Grid.Column="0" Grid.Row="2" Margin="4,0"
+                   Text="Torque:"
+                   />
+        <TextBlock Grid.Column="1" Grid.Row="2" Margin="4,0"
+                   Text="{Binding Path=DataSeries.MaxTorque, Converter={StaticResource MaxTorqueStringConverter}}"
+                   />
       </Grid>
       <c:Chart x:Name="chart" Margin="4" LegendVisibility="Collapsed"
                LegendPosition="LeftInside" LegendVerticalAlignment="Top">
@@ -195,28 +251,44 @@
           </c:BehaviourManager>
         </c:Chart.Behaviour>
         <c:Chart.XAxis>
-          <c:LinearAxis x:Name="RpmAxis" Title="RPM" ShowGridlines="True" />
+          <c:LinearAxis Title="RPM" ShowGridlines="True" />
         </c:Chart.XAxis>
         <c:Chart.YAxis>
-          <c:LinearAxis x:Name="PowerAxis"
-                        Title="{Binding Source={x:Static p:Settings.Default},
+          <c:LinearAxis Title="{Binding Source={x:Static p:Settings.Default},
                         Path=PowerUnit, StringFormat=Power (\{0\})}"
                         Foreground="{Binding Source={x:Static p:Settings.Default}, Path=PowerColor}"
                         ShowGridlines="True" ShowMajorTicks="True" ShowMinorTicks="True"
-                        ContextMenu="{StaticResource PowerUnitContextMenu}" />
+                        ContextMenu="{StaticResource PowerUnitContextMenu}"
+                        LabelStyle="{StaticResource axisLabelStyle}"
+                        MajorTickStyle="{StaticResource axisLineStyle}"
+                        MinorTickStyle="{StaticResource axisLineStyle}"
+                        AxisLineStyle="{StaticResource axisLineStyle}"
+                        />
         </c:Chart.YAxis>
         <c:Chart.SecondaryYAxis>
-          <c:LinearAxis x:Name="TorqueAxis"
-                        Title="{Binding Source={x:Static p:Settings.Default},
+          <c:LinearAxis Title="{Binding Source={x:Static p:Settings.Default},
                         Path=TorqueUnit, StringFormat=Torque (\{0\})}"
                         Foreground="{Binding Source={x:Static p:Settings.Default}, Path=TorqueColor}"
                         ShowGridlines="False" ShowMajorTicks="True" ShowMinorTicks="True"
-                        ContextMenu="{StaticResource TorqueUnitContextMenu}" />
+                        ContextMenu="{StaticResource TorqueUnitContextMenu}"
+                        LabelStyle="{StaticResource axisLabelStyle}"
+                        MajorTickStyle="{StaticResource axisLineStyle}"
+                        MinorTickStyle="{StaticResource axisLineStyle}"
+                        AxisLineStyle="{StaticResource axisLineStyle}"
+                        />
         </c:Chart.SecondaryYAxis>
+        <c:Chart.AdditionalSecondaryYAxes>
+          <c:LinearAxis Title="Fuel Consumption (L/min)"
+                        Foreground="{Binding Source={x:Static p:Settings.Default}, Path=FuelConsumptionColor}"
+                        ShowGridlines="False" ShowMajorTicks="True" ShowMinorTicks="True"
+                        LabelStyle="{StaticResource axisLabelStyle}"
+                        MajorTickStyle="{StaticResource axisLineStyle}"
+                        MinorTickStyle="{StaticResource axisLineStyle}"
+                        AxisLineStyle="{StaticResource axisLineStyle}"
+                        />
+        </c:Chart.AdditionalSecondaryYAxes>
         <c:Chart.Series>
-          <c:SplineSeries x:Name="PowerSeries"
-                          LineStroke="{Binding Source={x:Static p:Settings.Default}, Path=PowerColor}"
-                          LineStrokeThickness="2"
+          <c:SplineSeries LineStroke="{Binding Source={x:Static p:Settings.Default}, Path=PowerColor}"
                           Visibility="{Binding Source={x:Static p:Settings.Default},
                           Path=PowerSeriesVisibility, Mode=TwoWay}">
             <c:SplineSeries.DataSeries>
@@ -225,9 +297,7 @@
                                     XValueBinding="{Binding Path=RPM}" />
             </c:SplineSeries.DataSeries>
           </c:SplineSeries>
-          <c:SplineSeries x:Name="TorqueSeries"
-                          LineStroke="{Binding Source={x:Static p:Settings.Default}, Path=TorqueColor}"
-                          LineStrokeThickness="2"
+          <c:SplineSeries LineStroke="{Binding Source={x:Static p:Settings.Default}, Path=TorqueColor}"
                           Visibility="{Binding Source={x:Static p:Settings.Default},
                           Path=TorqueSeriesVisibility, Mode=TwoWay}">
             <c:SplineSeries.DataSeries>
@@ -236,14 +306,21 @@
                                     XValueBinding="{Binding Path=RPM}" />
             </c:SplineSeries.DataSeries>
           </c:SplineSeries>
-          <c:SplineSeries x:Name="BackTorqueSeries"
-                          LineStroke="{Binding Source={x:Static p:Settings.Default}, Path=BackTorqueColor}"
-                          LineStrokeThickness="2"
+          <c:SplineSeries LineStroke="{Binding Source={x:Static p:Settings.Default}, Path=BackTorqueColor}"
                           Visibility="{Binding Source={x:Static p:Settings.Default},
                           Path=BackTorqueSeriesVisibility, Mode=TwoWay}">
             <c:SplineSeries.DataSeries>
               <c:BindableDataSeries Title="Back Torque" ItemsSource="{StaticResource DataSeries}"
                                     YValueBinding="{Binding Path=BackTorque}"
+                                    XValueBinding="{Binding Path=RPM}" />
+            </c:SplineSeries.DataSeries>
+          </c:SplineSeries>
+          <c:SplineSeries LineStroke="{Binding Source={x:Static p:Settings.Default}, Path=FuelConsumptionColor}"
+                          Visibility="{Binding Source={x:Static p:Settings.Default},
+                          Path=FuelConsumptionSeriesVisibility, Mode=TwoWay}">
+            <c:SplineSeries.DataSeries>
+              <c:BindableDataSeries Title="Fuel Consumption" ItemsSource="{StaticResource DataSeries}"
+                                    YValueBinding="{Binding Path=FuelConsumption}"
                                     XValueBinding="{Binding Path=RPM}" />
             </c:SplineSeries.DataSeries>
           </c:SplineSeries>

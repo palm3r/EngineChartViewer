@@ -37,7 +37,7 @@ namespace EngineChartViewer.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("460")]
+        [global::System.Configuration.DefaultSettingValueAttribute("500")]
         public double Height {
             get {
                 return ((double)(this["Height"]));
@@ -164,6 +164,30 @@ namespace EngineChartViewer.Properties {
             }
             set {
                 this["BackTorqueColor"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("#FF806000")]
+        public global::System.Windows.Media.SolidColorBrush FuelConsumptionColor {
+            get {
+                return ((global::System.Windows.Media.SolidColorBrush)(this["FuelConsumptionColor"]));
+            }
+            set {
+                this["FuelConsumptionColor"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Visible")]
+        public global::System.Windows.Visibility FuelConsumptionSeriesVisibility {
+            get {
+                return ((global::System.Windows.Visibility)(this["FuelConsumptionSeriesVisibility"]));
+            }
+            set {
+                this["FuelConsumptionSeriesVisibility"] = value;
             }
         }
     }
